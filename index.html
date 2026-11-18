@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="theme-color" content="#0A58A8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diésel Villena–Petrer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root {
+  /* Layout: una columna. Zonas del trayecto, pestañas Precios / Evolución. En Precios cada gasolinera lleva dos columnas de precio: Diésel y Diésel +. */
+  --bg: #F2F4F1;
+  --card: #FFFFFF;
+  --ink: #13212B;
+  --muted: #55646F;
+  --line: #D8DDD7;
+  --accent: #0A58A8;
+  --accent-ink: #FFFFFF;
+  --good: #17794A;
+  --good-bg: #E1F2E8;
+  --warn: #9A4A12;
+  --warn-bg: #FBEBDD;
+  --c1: #1F5FBF; --c2: #D1561A; --c3: #12805C; --c4: #9B4FC7;
+  --c5: #A07800; --c6: #D6336C; --c7: #5A6B78; --c8: #0E8FA6;
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1A22; --card: #17252F; --ink: #E8EEF2; --muted: #9AAAB6; --line: #26363F;
+    --accent: #5AA9F0; --accent-ink: #0F1A22; --good: #4CC38A; --good-bg: #17352A; --warn: #E0985F; --warn-bg: #3A2718;
+    --c1: #6CA8FF; --c2: #FF9A5C; --c3: #4CC38A; --c4: #C58CF0; --c5: #E3B93C; --c6: #FF7AA8; --c7: #A9B7C2; --c8: #4FC3DA;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1A22; --card: #17252F; --ink: #E8EEF2; --muted: #9AAAB6; --line: #26363F;
+  --accent: #5AA9F0; --accent-ink: #0F1A22; --good: #4CC38A; --good-bg: #17352A; --warn: #E0985F; --warn-bg: #3A2718;
+  --c1: #6CA8FF; --c2: #FF9A5C; --c3: #4CC38A; --c4: #C58CF0; --c5: #E3B93C; --c6: #FF7AA8; --c7: #A9B7C2; --c8: #4FC3DA;
+  color-scheme: dark;
+}
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.4; }
+.wrap {
+  max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;
+  padding-block: 20px 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 2rem; line-height: 1.05; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.375rem; line-height: 1.1; margin: 0; }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 0.875rem; }
+[hidden] { display: none !important; }
+button { font-family: inherit; }
+button:focus-visible, a:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tabs button { padding: 10px 16px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--muted); font: 600 1rem var(--font-body); cursor: pointer; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+.route { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
+.route button {
+  flex: 1; min-width: 0; padding: 10px 4px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--muted);
+  font: 600 1rem var(--font-body); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.route button:last-child { border-right: 0; }
+.route button small { font-weight: 500; font-size: 0.75rem; }
+.route button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+.note { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: 0.875rem; margin: 0; }
+.info { color: var(--muted); font-size: 0.875rem; margin: 0; }
+
+.bests { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.best { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.best .lab { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--good); font-weight: 600; }
+.best .big { font-family: var(--font-display); font-weight: 700; font-size: 2.5rem; line-height: 1; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 4px; }
+.best .big span { font-size: 1rem; color: var(--muted); font-weight: 600; }
+.best .who { font-weight: 600; font-size: 0.9375rem; overflow-wrap: anywhere; }
+.best .spread { color: var(--muted); font-size: 0.8125rem; }
+
+.bar { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--card); }
+.seg button { padding: 8px 12px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--muted); font: 500 0.9375rem var(--font-body); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.ghost { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--accent); font: 600 0.9375rem var(--font-body); cursor: pointer; }
+.ghost[disabled] { opacity: 0.5; cursor: default; }
+
+.colhead, .card { display: grid; grid-template-columns: minmax(0, 1fr) 4.9rem 4.9rem; column-gap: 10px; }
+.colhead { padding: 0 12px; color: var(--muted); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; text-align: right; }
+.colhead span:first-child { text-align: left; }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; align-items: start; }
+.in { min-width: 0; display: grid; gap: 2px; }
+.nm { font-weight: 600; }
+.ad, .hr { color: var(--muted); font-size: 0.875rem; overflow-wrap: anywhere; }
+.go { font-weight: 600; font-size: 0.9375rem; color: var(--accent); text-decoration: none; justify-self: start; }
+.go:hover { text-decoration: underline; }
+.pc { display: grid; gap: 4px; justify-items: end; }
+.pc .n { font-family: var(--font-display); font-weight: 700; font-size: 1.625rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.pc .n.na { color: var(--muted); font-weight: 600; }
+.tg { font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--warn); white-space: nowrap; }
+.tg.good { color: var(--good); background: var(--good-bg); padding: 1px 6px; border-radius: 999px; }
+
+.empty { background: var(--card); border: 1px dashed var(--line); border-radius: 12px; padding: 16px; color: var(--muted); }
+
+.cc { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { font-family: var(--font-body); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--ink); font: 500 0.8125rem var(--font-body); cursor: pointer; }
+.chip i { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.chip[aria-pressed="false"] { color: var(--muted); }
+.chip[aria-pressed="false"] i { background: transparent; border: 1.5px solid var(--muted); }
+.picker summary { cursor: pointer; font-weight: 600; font-size: 0.9375rem; }
+.picker .chips { margin-top: 8px; }
+
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.panel summary { cursor: pointer; font-weight: 600; }
+.panel ol { margin: 10px 0; padding-left: 1.25rem; display: grid; gap: 6px; }
+.panel textarea { width: 100%; box-sizing: border-box; min-height: 96px; resize: vertical; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: 0.8125rem ui-monospace, Menlo, Consolas, monospace; }
+.panel .row { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.primary { padding: 10px 14px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font: 600 1rem var(--font-body); cursor: pointer; }
+.msg { color: var(--warn); font-size: 0.875rem; margin: 0; }
+.foot { color: var(--muted); font-size: 0.8125rem; margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Diésel Villena–Petrer</h1>
+    <p class="sub" id="status"></p>
+  </header>
+
+  <p class="note" id="stale" hidden></p>
+  <p class="note" id="fail" hidden></p>
+
+  <div class="tabs" role="tablist" aria-label="Vista">
+    <button type="button" role="tab" id="tab-precios" data-t="precios">Precios</button>
+    <button type="button" role="tab" id="tab-evol" data-t="evol">Evolución</button>
+  </div>
+
+  <nav class="route" id="zones" aria-label="Zonas del trayecto"></nav>
+
+  <section id="view-precios" aria-labelledby="tab-precios" style="display:flex;flex-direction:column;gap:16px">
+    <div class="bests" id="best" aria-live="polite"></div>
+    <div class="bar">
+      <div class="seg" id="seg" role="group" aria-label="Ordenar por">
+        <button type="button" data-o="A">Diésel</button>
+        <button type="button" data-o="P">Diésel +</button>
+        <button type="button" data-o="ida">Ida</button>
+        <button type="button" data-o="vuelta">Vuelta</button>
+      </div>
+      <button type="button" class="ghost" id="refresh">Actualizar</button>
+    </div>
+    <div id="empty" class="empty" hidden>Marca al menos una zona del trayecto.</div>
+    <div class="colhead" id="colhead"><span>Gasolinera</span><span>Diésel €/l</span><span>Diésel + €/l</span></div>
+    <ol id="list" class="list"></ol>
+  </section>
+
+  <section id="view-evol" aria-labelledby="tab-evol" hidden style="flex-direction:column;gap:16px">
+    <div class="bar">
+      <p class="info" id="hstatus"></p>
+      <button type="button" class="ghost" id="hload">Cargar histórico</button>
+    </div>
+    <p class="info">La primera vez se descarga el histórico de cada día, que pesa varios MB por día. Después se guarda en este navegador y solo se añade el día nuevo. Elige abajo de cada gráfica qué gasolineras comparar (hasta 8).</p>
+    <div id="charts" style="display:flex;flex-direction:column;gap:16px"></div>
+  </section>
+
+  <details id="panel" class="panel">
+    <summary>Cargar precios a mano</summary>
+    <ol>
+      <li>Abre los datos del Ministerio: <a id="apilink" target="_blank" rel="noopener" href="#">precios de gasóleo en Alicante</a>.</li>
+      <li>Selecciona todo el texto de esa pestaña y cópialo.</li>
+      <li>Vuelve aquí, pégalo en el recuadro y pulsa Cargar.</li>
+    </ol>
+    <label for="paste" class="sub">Datos copiados</label>
+    <textarea id="paste" spellcheck="false" placeholder='{"Fecha":"…","ListaEESSPrecio":[…]}'></textarea>
+    <div class="row">
+      <button type="button" class="primary" id="load">Cargar</button>
+      <p class="msg" id="pmsg" role="status"></p>
+    </div>
+  </details>
+
+  <p class="foot">Fuente: Ministerio para la Transición Ecológica y el Reto Demográfico (gasóleo A y gasóleo Premium, precio comunicado por cada gasolinera). Si la consulta en vivo falla se muestra una copia del sábado 14 de noviembre a las 21:56, solo con Diésel normal. Coste estimado con un repostaje de 50 L.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var ZONES = ["Villena", "Sax", "Elda", "Petrer"];
+  var ABBR = { Villena: "Vil", Sax: "Sax", Elda: "Eld", Petrer: "Pet" };
+  var BASE = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/";
+  var URL_ALL = BASE + "EstacionesTerrestres/FiltroProvincia/03";
+  var URL_A = BASE + "EstacionesTerrestres/FiltroProvinciaProducto/03/4";
+  var URL_HIST = BASE + "EstacionesTerrestresHist/";
+  var KEY = "diesel-villena-petrer-v3", HKEY = "diesel-villena-petrer-hist-v1";
+  var LITROS = 50;
+  var FUELS = [{ k: "A", label: "Diésel", fld: "pA", idx: 0 }, { k: "P", label: "Diésel +", fld: "pP", idx: 1 }];
+
+  // Copia guardada (solo Diésel normal), por si la consulta en vivo falla.
+  var WHEN_MS = Date.parse("2026-11-14T21:56:00+01:00");
+  var SRC_LABEL = "Copia guardada del sáb 14 nov, 21:56";
+  var SNAP = [
+    ["Villena", "GALP", "Avenida Alicante, 81", 1.749, "L-D 24 h"],
+    ["Villena", "JBM", "Partida Prado de la Villa, 106", 1.889, "L-D 06:00-22:00"],
+    ["Villena", "La Morenica", "Avenida Constitución, 206", 1.899, "L-D 05:00-00:00"],
+    ["Villena", "BP", "Autovía Alicante-Madrid, km 59", 1.929, "L-D 06:00-22:00"],
+    ["Villena", "Repsol", "Carretera N-330, km 68", 1.929, "L-D 06:00-02:00"],
+    ["Villena", "Repsol", "Avenida Alicante, 18", 1.945, "L-D 06:00-22:00"],
+    ["Villena", "Repsol", "Autovía Alicante, km 53", 1.945, "L-V 07:00-23:59; S 07:00-22:00; D 07:00-23:59"],
+    ["Villena", "Repsol", "Carretera Alicante, km 53", 1.945, "L-D 06:00-22:00"],
+    ["Villena", "Repsol", "Carretera de Yecla, km 1", 1.945, "L-D 06:00-22:00"],
+    ["Sax", "GALP", "Autovía A-31, km 191", 1.849, "L-V 06:00-22:00; S-D 08:00-17:00"],
+    ["Sax", "Cepsa", "Autovía A-31, km 191,100", 1.925, "L-D 06:00-22:00"],
+    ["Sax", "Repsol", "Pasaje de las Suertes, s/n", 1.945, "L-D 06:00-22:00"],
+    ["Sax", "Cepsa", "Autovía A-31, km 196,500", 1.949, "L-D 06:00-22:00"],
+    ["Elda", "Gasexpress", "Calle Médico Federico Martínez Pérez, 1", 1.695, "L-D 24 h"],
+    ["Elda", "Plenergy", "Avenida Monóvar, 18", 1.695, "L-D 24 h"],
+    ["Elda", "Repostando", "Calle Condes de Elda, s/n", 1.699, "L-D 06:00-22:00"],
+    ["Elda", "V2 Gasolineras", "Carretera Elda-Monóvar, km 13", 1.749, "L-D 06:00-22:00"],
+    ["Elda", "Shell", "Avenida Mediterráneo, 16", 1.799, "L-D 06:00-23:59"],
+    ["Elda", "Moeve", "Avenida Mediterráneo, s/n", 1.86, "L-D 06:00-23:00"],
+    ["Elda", "Cepsa", "Calle Romero, 2 / Avenida Libertad", 1.889, "L-D 06:00-23:00"],
+    ["Elda", "Repsol", "Carretera C-3213, km 15,700", 1.895, "L-D 06:00-22:00"],
+    ["Elda", "Repsol", "Avenida Centro Excursionista, s/n", 1.895, "L-D 06:00-22:00"],
+    ["Petrer", "Ballenoil", "Calle Presbítero Conrado Poveda, 1", 1.695, "L-D 24 h"],
+    ["Petrer", "E.S. Petrer-Elda", "Avenida del Mediterráneo, 129", 1.695, "L-D 24 h"],
+    ["Petrer", "Plenergy", "Avenida del Mediterráneo, s/n", 1.695, ""],
+    ["Petrer", "Shell", "Avenida del Guirney, 4", 1.799, ""],
+    ["Petrer", "Carrefour", "Avenida del Guirney, 2 bis", 1.829, ""],
+    ["Petrer", "Cepsa", "Autovía A-31, km 201,700", 1.889, "Desde las 06:00"],
+    ["Petrer", "Cepsa", "Autovía A-31, km 204,600", 1.899, "Desde las 06:00"]
+  ];
+  var DATA = SNAP.map(function (r) {
+    return { id: r[0] + "|" + r[1] + "|" + r[2], zona: r[0], nombre: r[1], dir: r[2], pA: r[3], pP: null, horario: r[4], lat: null, lon: null };
+  });
+  var isLive = false;
+
+  var state = { zonas: ZONES.slice(), orden: "A", tab: "precios", sel: { A: null, P: null }, picker: { A: false, P: false } };
+  var hist = { days: {}, meta: {} };
+  var histBusy = false, histErr = "";
+
+  function $(id) { return document.getElementById(id); }
+  function h(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function eur(n, d) { return n.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function norm(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); }
+  function num(s) { var n = parseFloat(String(s == null ? "" : s).replace(",", ".")); return isFinite(n) ? n : null; }
+  function cap(s, keepShort) {
+    s = String(s || "");
+    if (keepShort && s.length <= 3) return s.toUpperCase();
+    return s.toLowerCase().replace(/(^|[\s\-\/.(])([a-záéíóúñü])/g, function (m, a, b) { return a + b.toUpperCase(); });
+  }
+  function describe(e) { return (e && e.name ? e.name + ": " : "") + (e && e.message ? e.message : "error"); }
+  function fail(name, msg) { var e = new Error(msg); e.name = name; return e; }
+
+  // ---------- Lectura y análisis de datos del Ministerio ----------
+  function xmlName(n) { return n.replace(/_x([0-9A-Fa-f]{4})_/g, function (m, c) { return String.fromCharCode(parseInt(c, 16)); }); }
+  function keyOf(k) { return norm(xmlName(k)).replace(/\s+/g, " "); }
+  function getter(e) {
+    var m = {};
+    for (var k in e) m[keyOf(k)] = e[k];
+    return function (name) { return m[keyOf(name)]; };
+  }
+  function toData(txt) {
+    txt = txt.replace(/^﻿/, "").trim();
+    var a = txt.indexOf("{"), b = txt.lastIndexOf("}");
+    if (a > -1 && b > a) { try { return JSON.parse(txt.slice(a, b + 1)); } catch (e) {} }
+    var x = txt.indexOf("<");
+    if (x > -1) {
+      var doc = new DOMParser().parseFromString(txt.slice(x), "text/xml");
+      var items = doc.getElementsByTagName("EESSPrecio");
+      if (items.length) {
+        var fecha = doc.getElementsByTagName("Fecha")[0], list = [];
+        for (var i = 0; i < items.length; i++) {
+          var o = {}, kids = items[i].children;
+          for (var j = 0; j < kids.length; j++) o[xmlName(kids[j].localName)] = kids[j].textContent;
+          list.push(o);
+        }
+        return { Fecha: fecha ? fecha.textContent : "", ListaEESSPrecio: list };
+      }
+    }
+    throw fail("Formato", "el texto no tiene el formato del Ministerio");
+  }
+  function parseRows(data, opts) {
+    var list = data && data.ListaEESSPrecio;
+    if (!Array.isArray(list)) throw fail("Formato", "falta la lista de gasolineras");
+    var zn = ZONES.map(norm), rows = [];
+    list.forEach(function (e) {
+      var zi = zn.indexOf(norm(e["Municipio"]));
+      if (zi < 0) return;
+      var g = getter(e);
+      var pA = num(g("Precio Gasoleo A")), pP = num(g("Precio Gasoleo Premium"));
+      if (pA == null && opts && opts.soloA) pA = num(e["PrecioProducto"]);
+      if (pA == null && pP == null) return;
+      var nombre = cap(e["Rótulo"] || "Gasolinera", true), dir = cap(e["Dirección"] || "");
+      rows.push({
+        id: String(e["IDEESS"] || (ZONES[zi] + "|" + nombre + "|" + dir)),
+        zona: ZONES[zi], nombre: nombre, dir: dir, pA: pA, pP: pP,
+        horario: String(e["Horario"] || ""), lat: num(g("Latitud")), lon: num(g("Longitud (WGS84)"))
+      });
+    });
+    var ms = Date.now(), f = String(data.Fecha || ""), m = /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/.exec(f);
+    if (m) ms = new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]).getTime();
+    return { fecha: f, rows: rows, ms: ms };
+  }
+  function fetchData(url, ms) {
+    var ctrl = ("AbortController" in window) ? new AbortController() : null;
+    var t = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
+    return fetch(url, { headers: { "Accept": "application/json" }, signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) { clearTimeout(t); if (!r.ok) throw fail("HTTP", "respuesta " + r.status); return r.text(); })
+      .then(toData);
+  }
+
+  // ---------- Preferencias e histórico guardado en el navegador ----------
+  try {
+    var r0 = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (r0) {
+      if (Array.isArray(r0.zonas)) { var z = r0.zonas.filter(function (x) { return ZONES.indexOf(x) > -1; }); if (z.length) state.zonas = z; }
+      if (["A", "P", "ida", "vuelta"].indexOf(r0.orden) > -1) state.orden = r0.orden;
+      if (r0.tab === "evol") state.tab = "evol";
+    }
+  } catch (e) {}
+  try {
+    var h0 = JSON.parse(localStorage.getItem(HKEY) || "null");
+    if (h0 && h0.days) { hist.days = h0.days; hist.meta = h0.meta || {}; }
+  } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ zonas: state.zonas, orden: state.orden, tab: state.tab })); } catch (e) {} }
+  function saveHist() {
+    try {
+      var keys = Object.keys(hist.days).sort();
+      while (keys.length > 21) delete hist.days[keys.shift()];
+      localStorage.setItem(HKEY, JSON.stringify(hist));
+    } catch (e) {}
+  }
+  function isoOf(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function dmy(d) { return pad(d.getDate()) + "-" + pad(d.getMonth() + 1) + "-" + d.getFullYear(); }
+  function lastDays() {
+    var out = [], base = new Date(); base.setHours(12, 0, 0, 0);
+    for (var i = 6; i >= 0; i--) { var d = new Date(base.getTime()); d.setDate(d.getDate() - i); out.push(d); }
+    return out;
+  }
+  function recordDay(iso, rows) {
+    var day = {};
+    rows.forEach(function (r) { day[r.id] = [r.pA, r.pP]; hist.meta[r.id] = { zona: r.zona, nombre: r.nombre, dir: r.dir }; });
+    hist.days[iso] = day;
+  }
+
+  // ---------- Pestaña Precios ----------
+  function stats(rows, fld) {
+    var v = rows.filter(function (s) { return s[fld] != null; });
+    if (!v.length) return null;
+    var sorted = v.slice().sort(function (a, b) { return a[fld] - b[fld]; });
+    return { min: sorted[0][fld], max: sorted[sorted.length - 1][fld], top: sorted.filter(function (s) { return s[fld] - sorted[0][fld] < 0.0004; }) };
+  }
+  function sortRows(rows) {
+    var o = state.orden;
+    if (o === "A" || o === "P") {
+      var f = o === "A" ? "pA" : "pP", g = o === "A" ? "pP" : "pA";
+      return rows.slice().sort(function (a, b) {
+        var x = a[f] == null ? 9 : a[f], y = b[f] == null ? 9 : b[f];
+        return x - y || (a[g] == null ? 9 : a[g]) - (b[g] == null ? 9 : b[g]);
+      });
+    }
+    var dir = o === "ida" ? 1 : -1;
+    return rows.slice().sort(function (a, b) {
+      return dir * (ZONES.indexOf(a.zona) - ZONES.indexOf(b.zona)) || (a.pA == null ? 9 : a.pA) - (b.pA == null ? 9 : b.pA);
+    });
+  }
+  function bestBlock(f, st) {
+    var b = h("div", "best");
+    b.appendChild(h("div", "lab", f.label + " · más barata"));
+    if (!st) { b.appendChild(h("div", "who", "Sin precio")); return b; }
+    var big = h("div", "big", eur(st.min, 3)); big.appendChild(h("span", "", "€/l")); b.appendChild(big);
+    b.appendChild(h("div", "who", st.top.length > 1
+      ? st.top.length + " a este precio: " + st.top.map(function (s) { return s.nombre + " (" + ABBR[s.zona] + ")"; }).join(", ")
+      : st.top[0].nombre + " · " + st.top[0].zona));
+    var diff = st.max - st.min;
+    b.appendChild(h("div", "spread", diff > 0.0004 ? eur(diff * LITROS, 2) + " € menos que la más cara en " + LITROS + " L" : "Todas cuestan lo mismo"));
+    return b;
+  }
+  function cell(price, min) {
+    var c = h("div", "pc");
+    if (price == null) { c.appendChild(h("div", "n na", "—")); return c; }
+    c.appendChild(h("div", "n", eur(price, 3)));
+    var d = price - min;
+    c.appendChild(d < 0.0004 ? h("span", "tg good", "Más barata") : h("span", "tg", "+" + eur(d * 100, 1) + " cts"));
+    return c;
+  }
+  function renderPrices() {
+    var best = $("best"), list = $("list"), empty = $("empty"), head = $("colhead");
+    best.textContent = ""; list.textContent = "";
+    var rows = DATA.filter(function (s) { return state.zonas.indexOf(s.zona) > -1; });
+    if (!rows.length) { empty.hidden = false; head.hidden = true; return; }
+    empty.hidden = true; head.hidden = false;
+    var sA = stats(rows, "pA"), sP = stats(rows, "pP");
+    best.appendChild(bestBlock(FUELS[0], sA));
+    best.appendChild(bestBlock(FUELS[1], sP));
+    sortRows(rows).forEach(function (s) {
+      var li = h("li", "card");
+      var info = h("div", "in");
+      info.appendChild(h("div", "nm", s.nombre));
+      info.appendChild(h("div", "ad", s.dir + (s.dir ? ", " : "") + s.zona));
+      if (s.horario) info.appendChild(h("div", "hr", s.horario));
+      var a = h("a", "go", "Cómo llegar"); a.target = "_blank"; a.rel = "noopener";
+      a.href = "https://www.google.com/maps/dir/?api=1&destination=" + (s.lat != null && s.lon != null ? s.lat + "," + s.lon : encodeURIComponent(s.nombre + " " + s.dir + ", " + s.zona + ", Alicante"));
+      info.appendChild(a);
+      li.appendChild(info);
+      li.appendChild(cell(s.pA, sA ? sA.min : 0));
+      li.appendChild(cell(s.pP, sP ? sP.min : 0));
+      list.appendChild(li);
+    });
+  }
+
+  // ---------- Pestaña Evolución ----------
+  function svgEl(tag, attrs, txt) {
+    var e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+  function valueOf(iso, id, idx) {
+    var day = hist.days[iso];
+    return day && day[id] && day[id][idx] != null ? day[id][idx] : null;
+  }
+  function shortName(id) {
+    var m = hist.meta[id] || { nombre: "?", zona: "" };
+    var n = m.nombre.length > 11 ? m.nombre.slice(0, 10) + "…" : m.nombre;
+    return n + " " + (ABBR[m.zona] || "");
+  }
+  function drawChart(f, ids, days) {
+    var W = 420, H = 260, L = 44, R = 92, T = 12, B = 28, iw = W - L - R, ih = H - T - B;
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Evolución semanal del precio de " + f.label });
+    svg.setAttribute("class", "chart");
+    var series = ids.map(function (id, i) {
+      return { id: id, slot: i % 8 + 1, vals: days.map(function (d) { return valueOf(isoOf(d), id, f.idx); }) };
+    });
+    var all = [];
+    series.forEach(function (s) { s.vals.forEach(function (v) { if (v != null) all.push(v); }); });
+    if (!all.length) {
+      var t0 = svgEl("text", { x: W / 2, y: H / 2, "text-anchor": "middle", "font-size": "13" }, "Aún no hay datos para dibujar");
+      t0.style.fill = "var(--muted)"; svg.appendChild(t0); return svg;
+    }
+    var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+    var padv = Math.max(0.01, (hi - lo) * 0.15); lo -= padv; hi += padv;
+    var steps = [0.01, 0.02, 0.05, 0.1, 0.2], step = 0.2;
+    for (var q = 0; q < steps.length; q++) { if ((hi - lo) / steps[q] <= 5) { step = steps[q]; break; } }
+    function X(i) { return L + (days.length === 1 ? iw / 2 : iw * i / (days.length - 1)); }
+    function Y(v) { return T + ih * (1 - (v - lo) / (hi - lo)); }
+    var first = Math.ceil(lo / step - 1e-9);
+    for (var n = first; n * step <= hi + 1e-9; n++) {
+      var yy = Y(n * step);
+      var gl = svgEl("line", { x1: L, x2: L + iw, y1: yy, y2: yy, "stroke-width": "1" }); gl.style.stroke = "var(--line)"; svg.appendChild(gl);
+      var tl = svgEl("text", { x: L - 6, y: yy + 3.5, "text-anchor": "end", "font-size": "10" }, eur(n * step, 2)); tl.style.fill = "var(--muted)"; svg.appendChild(tl);
+    }
+    days.forEach(function (d, i) {
+      var xl = svgEl("text", { x: X(i), y: H - 8, "text-anchor": "middle", "font-size": "10" },
+        d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric" }).replace(",", ""));
+      xl.style.fill = "var(--muted)"; svg.appendChild(xl);
+    });
+    var ends = [];
+    series.forEach(function (s) {
+      var path = "", pen = false, lastI = -1;
+      s.vals.forEach(function (v, i) {
+        if (v == null) { pen = false; return; }
+        path += (pen ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1) + " ";
+        pen = true; lastI = i;
+      });
+      var col = "var(--c" + s.slot + ")";
+      var pl = svgEl("path", { d: path, fill: "none", "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" });
+      pl.style.stroke = col; svg.appendChild(pl);
+      s.vals.forEach(function (v, i) {
+        if (v == null) return;
+        var c = svgEl("circle", { cx: X(i).toFixed(1), cy: Y(v).toFixed(1), r: i === lastI ? "3.5" : "2.5" });
+        c.style.fill = col;
+        c.appendChild(svgEl("title", {}, shortName(s.id) + " · " + days[i].getDate() + "/" + (days[i].getMonth() + 1) + " · " + eur(v, 3) + " €/l"));
+        svg.appendChild(c);
+      });
+      if (lastI > -1) ends.push({ y: Y(s.vals[lastI]) + 3.5, slot: s.slot, id: s.id });
+    });
+    ends.sort(function (a, b) { return a.y - b.y; });
+    for (var i = 1; i < ends.length; i++) if (ends[i].y < ends[i - 1].y + 12) ends[i].y = ends[i - 1].y + 12;
+    for (var j = ends.length - 2; j >= 0; j--) if (ends[j].y > ends[j + 1].y - 12) ends[j].y = ends[j + 1].y - 12;
+    ends.forEach(function (e) {
+      var lb = svgEl("text", { x: L + iw + 8, y: e.y.toFixed(1), "font-size": "10", "font-weight": "600" }, shortName(e.id));
+      lb.style.fill = "var(--c" + e.slot + ")"; svg.appendChild(lb);
+    });
+    return svg;
+  }
+  function chartCard(f, days) {
+    var card = h("section", "cc");
+    card.appendChild(h("h2", "", f.label + " · últimos 7 días (€/l)"));
+    var current = {};
+    DATA.forEach(function (s) { current[s.id] = s; });
+    var cands = Object.keys(hist.meta).filter(function (id) {
+      var m = hist.meta[id];
+      if (state.zonas.indexOf(m.zona) < 0) return false;
+      return days.some(function (d) { return valueOf(isoOf(d), id, f.idx) != null; });
+    });
+    function latest(id) {
+      for (var i = days.length - 1; i >= 0; i--) { var v = valueOf(isoOf(days[i]), id, f.idx); if (v != null) return v; }
+      return 9;
+    }
+    cands.sort(function (a, b) { return latest(a) - latest(b); });
+    var sel = (state.sel[f.k] || cands.slice(0, 5)).filter(function (id) { return cands.indexOf(id) > -1; }).slice(0, 8);
+    card.appendChild(drawChart(f, sel, days));
+
+    var chips = h("div", "chips");
+    sel.forEach(function (id, i) {
+      var b = h("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", "true");
+      var dot = h("i"); dot.style.background = "var(--c" + (i % 8 + 1) + ")"; b.appendChild(dot);
+      b.appendChild(document.createTextNode(shortName(id)));
+      b.addEventListener("click", function () { toggle(f, id, sel); });
+      chips.appendChild(b);
+    });
+    if (sel.length) card.appendChild(chips);
+
+    var det = h("details", "picker");
+    if (state.picker[f.k]) det.open = true;
+    det.addEventListener("toggle", function () { state.picker[f.k] = det.open; });
+    det.appendChild(h("summary", "", "Elegir gasolineras (" + cands.length + ")"));
+    var all = h("div", "chips");
+    cands.forEach(function (id) {
+      var on = sel.indexOf(id) > -1;
+      var b = h("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", on ? "true" : "false");
+      var dot = h("i"); if (on) dot.style.background = "var(--c" + (sel.indexOf(id) % 8 + 1) + ")"; b.appendChild(dot);
+      var m = hist.meta[id];
+      b.appendChild(document.createTextNode(m.nombre + " · " + m.zona + " · " + eur(latest(id), 3)));
+      b.addEventListener("click", function () { toggle(f, id, sel); });
+      all.appendChild(b);
+    });
+    det.appendChild(all);
+    card.appendChild(det);
+    return card;
+  }
+  function toggle(f, id, sel) {
+    var cur = sel.slice(), i = cur.indexOf(id);
+    if (i > -1) cur.splice(i, 1); else { cur.push(id); if (cur.length > 8) cur.shift(); }
+    state.sel[f.k] = cur;
+    renderCharts();
+  }
+  function daysHave() {
+    return lastDays().filter(function (d) { return hist.days[isoOf(d)]; }).length;
+  }
+  function updateHStatus(msg) {
+    var n = daysHave(), s = $("hstatus"), b = $("hload");
+    s.textContent = msg || ("Histórico: " + n + " de 7 días" + (histErr ? ". No se pudo descargar (" + histErr + ")" : ""));
+    var ds = lastDays(), missing = ds.slice(0, 6).some(function (d) { return !hist.days[isoOf(d)]; });
+    b.hidden = !missing; b.disabled = histBusy; b.textContent = histErr ? "Reintentar" : "Cargar histórico";
+  }
+  function renderCharts() {
+    var box = $("charts"); box.textContent = "";
+    var days = lastDays();
+    FUELS.forEach(function (f) { box.appendChild(chartCard(f, days)); });
+    updateHStatus();
+  }
+  function loadHistory() {
+    if (histBusy) return;
+    var miss = lastDays().slice(0, 6).filter(function (d) { return !hist.days[isoOf(d)]; });
+    if (!miss.length) { updateHStatus(); return; }
+    histBusy = true; histErr = "";
+    (function next() {
+      if (!miss.length) { histBusy = false; renderCharts(); return; }
+      var d = miss.shift();
+      updateHStatus("Descargando el " + d.getDate() + "/" + (d.getMonth() + 1) + "… (puede tardar un minuto)");
+      fetchData(URL_HIST + dmy(d), 120000).then(function (data) {
+        var r = parseRows(data, null);
+        recordDay(isoOf(d), r.rows); saveHist(); renderCharts(); next();
+      }).catch(function (e) {
+        histBusy = false; histErr = describe(e); renderCharts();
+      });
+      $("hload").disabled = true;
+    })();
+  }
+
+  // ---------- Pantalla ----------
+  function ago() {
+    var min = Math.max(0, Math.round((Date.now() - WHEN_MS) / 60000));
+    if (min < 60) return { txt: "hace " + min + " min", min: min };
+    var hrs = Math.round(min / 60);
+    if (hrs < 48) return { txt: "hace " + hrs + " h", min: min };
+    return { txt: "hace " + Math.round(hrs / 24) + " días", min: min };
+  }
+  function renderHeader() {
+    var a = ago();
+    $("status").textContent = SRC_LABEL + " · " + a.txt;
+    var st = $("stale");
+    if (a.min > 180) { st.hidden = false; st.textContent = "Estos precios son de " + a.txt + ". Pulsa Actualizar para consultar los de ahora."; }
+    else st.hidden = true;
+  }
+  function renderZones() {
+    var nav = $("zones"); nav.textContent = "";
+    ZONES.forEach(function (z) {
+      var n = DATA.filter(function (s) { return s.zona === z; }).length;
+      var b = h("button"); b.type = "button";
+      b.setAttribute("aria-pressed", state.zonas.indexOf(z) > -1 ? "true" : "false");
+      b.appendChild(h("span", "", z));
+      b.appendChild(h("small", "", n + (n === 1 ? " gasolinera" : " gasolineras")));
+      b.addEventListener("click", function () {
+        var i = state.zonas.indexOf(z);
+        if (i > -1) state.zonas.splice(i, 1); else state.zonas.push(z);
+        save(); render();
+      });
+      nav.appendChild(b);
+    });
+  }
+  function render() {
+    renderHeader(); renderZones();
+    ["precios", "evol"].forEach(function (t) {
+      var on = state.tab === t;
+      $("tab-" + t).setAttribute("aria-selected", on ? "true" : "false");
+      var v = $("view-" + t);
+      v.hidden = !on; v.style.display = on ? "flex" : "none";
+    });
+    document.querySelectorAll("#seg button").forEach(function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-o") === state.orden ? "true" : "false");
+    });
+    if (state.tab === "precios") renderPrices(); else renderCharts();
+  }
+
+  function useData(rowsObj, origen, extraNote) {
+    if (!rowsObj.rows.length) throw fail("Datos", "no hay gasolineras con diésel en Villena, Sax, Elda ni Petrer");
+    DATA = rowsObj.rows; WHEN_MS = rowsObj.ms; isLive = true;
+    SRC_LABEL = (origen === "vivo" ? "En vivo" : "Cargado a mano") + " · datos del Ministerio del " + rowsObj.fecha;
+    recordDay(isoOf(new Date(rowsObj.ms)), rowsObj.rows); saveHist();
+    var f = $("fail");
+    if (extraNote) { f.hidden = false; f.textContent = extraNote; } else f.hidden = true;
+    render();
+    if (state.tab === "evol") loadHistory();
+  }
+  function tryLive() {
+    $("status").textContent = "Consultando al Ministerio…";
+    return fetchData(URL_ALL, 20000).then(function (d) { useData(parseRows(d, null), "vivo"); })
+      .catch(function (e1) {
+        return fetchData(URL_A, 20000).then(function (d) {
+          useData(parseRows(d, { soloA: true }), "vivo", "La consulta completa falló (" + describe(e1) + "). Se muestra solo Diésel normal.");
+        });
+      })
+      .catch(function (e) {
+        render();
+        var f = $("fail"); f.hidden = false;
+        f.textContent = "No se pudo leer el servicio del Ministerio (" + describe(e) + "). Se muestra la copia guardada. Puedes cargar los datos a mano más abajo.";
+        $("panel").open = true;
+      });
+  }
+
+  document.querySelectorAll("#seg button").forEach(function (b) {
+    b.addEventListener("click", function () { state.orden = b.getAttribute("data-o"); save(); render(); });
+  });
+  document.querySelectorAll(".tabs button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      state.tab = b.getAttribute("data-t"); save(); render();
+      if (state.tab === "evol") loadHistory();
+    });
+  });
+  $("refresh").addEventListener("click", tryLive);
+  $("hload").addEventListener("click", loadHistory);
+  $("apilink").href = URL_ALL;
+  $("load").addEventListener("click", function () {
+    var msg = $("pmsg"); msg.textContent = "";
+    var txt = $("paste").value.trim();
+    if (!txt) { msg.textContent = "Pega primero los datos copiados."; return; }
+    try { useData(parseRows(toData(txt), { soloA: true }), "pegado"); $("paste").value = ""; $("panel").open = false; }
+    catch (e) { msg.textContent = "No reconozco ese texto (empieza por «" + txt.slice(0, 50) + "»). " + (e && e.message ? e.message : ""); }
+  });
+
+  render();
+  tryLive();
+})();
+</script>
+</body>
+</html>
